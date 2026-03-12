@@ -737,7 +737,13 @@
                     <li class="nav-item">
                         <a class="nav-link" onclick="ConfigApp.scanProductImages()">
                             <span class="icon">🔍</span>
-                            <span>扫描产品图</span>
+                            <span>扫描本地产品图</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="ConfigApp.scanGitHubRepo()">
+                            <span class="icon">🌐</span>
+                            <span>扫描GitHub仓库</span>
                         </a>
                     </li>
                 </ul>
@@ -3398,6 +3404,273 @@
                 };
                 
                 input.click();
+            },
+            
+            // 扫描GitHub仓库产品图
+            scanGitHubRepo() {
+                // 显示GitHub仓库输入模态框
+                const modalHtml = `
+                    <div style="max-width: 600px;">
+                        <h4 style="margin-bottom: 1.5rem; color: var(--primary-color);">🌐 扫描GitHub仓库产品图</h4>
+                        
+                        <div class="form-group">
+                            <label class="form-label">GitHub仓库所有者</label>
+                            <input type="text" class="form-input" id="githubOwner" placeholder="例如: conlinzheng" value="conlinzheng">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">GitHub仓库名称</label>
+                            <input type="text" class="form-input" id="githubRepo" placeholder="例如: GH" value="GH">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">产品图文件夹路径</label>
+                            <input type="text" class="form-input" id="githubPath" placeholder="例如: 产品图" value="产品图">
+                        </div>
+                        
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 1rem; border-radius: 8px; margin: 1.5rem 0;">
+                            <h5 style="margin-bottom: 0.5rem; color: #856404;">⚠️ 重要提示</h5>
+                            <p style="color: #856404; font-size: 0.9rem;">
+                                由于GitHub API限制，此功能只能扫描公开仓库，且可能会受到API速率限制。
+                                扫描后仍需要手动下载图片并复制到本地产品图文件夹。
+                            </p>
+                        </div>
+                        
+                        <div class="btn-group" style="display: flex; gap: 1rem;">
+                            <button class="btn btn-primary" onclick="ConfigApp.startGitHubScan()">
+                                🔍 开始扫描
+                            </button>
+                            <button class="btn btn-secondary" onclick="ModalManager.close()">
+                                ❌ 取消
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                ModalManager.show('扫描GitHub仓库', modalHtml);
+            },
+            
+            // 开始GitHub仓库扫描
+            async startGitHubScan() {
+                const owner = document.getElementById('githubOwner').value.trim();
+                const repo = document.getElementById('githubRepo').value.trim();
+                const path = document.getElementById('githubPath').value.trim();
+                
+                if (!owner || !repo || !path) {
+                    Notifier.error('请填写完整的GitHub仓库信息');
+                    return;
+                }
+                
+                Notifier.info('开始扫描GitHub仓库...');
+                
+                try {
+                    // 使用GitHub API获取仓库内容
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                    const response = await fetch(apiUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`GitHub API请求失败: ${response.status}`);
+                    }
+                    
+                    const contents = await response.json();
+                    
+                    // 处理扫描结果
+                    const scanResult = this.processGitHubContents(contents, path, owner, repo);
+                    
+                    // 检查扫描结果
+                    if (Object.keys(scanResult).length === 0) {
+                        throw new Error('未找到符合格式的产品图片，请检查文件夹结构和命名格式');
+                    }
+                    
+                    console.log('GitHub扫描结果:', scanResult);
+                    // 显示预览
+                    this.showGitHubScanPreview(scanResult, owner, repo, path);
+                } catch (e) {
+                    console.error('GitHub扫描失败:', e);
+                    Notifier.error('扫描失败: ' + e.message);
+                }
+            },
+            
+            // 处理GitHub仓库内容
+            processGitHubContents(contents, basePath, owner, repo) {
+                const seriesMap = {};
+                
+                console.log('开始处理GitHub仓库内容...');
+                console.log('内容数量:', contents.length);
+                
+                // 处理系列文件夹
+                for (const item of contents) {
+                    if (item.type === 'dir') {
+                        // 检查文件夹命名格式
+                        const seriesMatch = item.name.match(/^(\d+)-(.*)$/);
+                        if (!seriesMatch) {
+                            console.log('跳过不符合格式的系列文件夹:', item.name);
+                            continue;
+                        }
+                        
+                        const seriesKey = seriesMatch[2].replace(/系列$/, '').toLowerCase();
+                        const seriesName = seriesMatch[2];
+                        
+                        console.log('系列信息:', { seriesKey, seriesName });
+                        
+                        // 初始化系列
+                        if (!seriesMap[seriesKey]) {
+                            seriesMap[seriesKey] = {
+                                name: seriesName,
+                                description: `${seriesName}鞋款`,
+                                products: []
+                            };
+                            console.log('创建新系列:', seriesKey);
+                        }
+                    }
+                }
+                
+                console.log('处理前的系列:', seriesMap);
+                return seriesMap;
+            },
+            
+            // 显示GitHub扫描预览
+            showGitHubScanPreview(scanResult, owner, repo, path) {
+                // 保存到临时变量
+                this.tempScanResult = scanResult;
+                this.tempGitHubInfo = { owner, repo, path };
+                
+                let previewHtml = `
+                    <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 1rem;">📋 GitHub仓库扫描结果预览</h4>
+                `;
+                
+                // 生成预览内容
+                Object.keys(scanResult).forEach(seriesKey => {
+                    const series = scanResult[seriesKey];
+                    previewHtml += `
+                        <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <h5 style="margin-bottom: 0.5rem; color: var(--primary-color);">${series.name}</h5>
+                            <p style="font-size: 0.9rem; color: var(--secondary-color); margin-bottom: 0.5rem;">${series.description}</p>
+                            <div style="margin-left: 1rem;">
+                                <p style="font-size: 0.9rem; color: #666;">该系列下的产品将在下载后显示</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                previewHtml += `
+                    </div>
+                    
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <h5 style="margin-bottom: 0.5rem; color: #856404;">⚠️ 重要提示</h5>
+                        <p style="color: #856404; font-size: 0.9rem;">
+                            由于GitHub API限制，此功能只能扫描文件夹结构，无法直接下载图片。<br>
+                            保存配置后，系统会显示详细的操作步骤。
+                        </p>
+                    </div>
+                    
+                    <div class="btn-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="ConfigApp.confirmGitHubScanResult()">
+                            ✅ 确认并保存配置
+                        </button>
+                        <button class="btn btn-secondary" onclick="ModalManager.close()">
+                            ❌ 取消
+                        </button>
+                    </div>
+                `;
+                
+                // 显示模态框
+                ModalManager.show('GitHub扫描结果预览', previewHtml);
+            },
+            
+            // 确认GitHub扫描结果
+            confirmGitHubScanResult() {
+                const scanResult = this.tempScanResult;
+                const githubInfo = this.tempGitHubInfo;
+                
+                if (!scanResult || !githubInfo) {
+                    Notifier.error('扫描结果不存在');
+                    return;
+                }
+                
+                // 合并现有配置和新扫描的配置
+                const existingProducts = DataManager.currentConfig.products || {};
+                const mergedProducts = {
+                    ...existingProducts,
+                    ...scanResult
+                };
+                
+                // 更新配置
+                DataManager.currentConfig.products = mergedProducts;
+                DataManager.saveConfig();
+                
+                // 生成并下载配置文件
+                this.saveConfigFile(mergedProducts);
+                
+                UIRenderer.renderView('series');
+                UIRenderer.updateStats();
+                ModalManager.close();
+                
+                // 显示GitHub操作说明
+                this.showGitHubInstructions(scanResult, githubInfo);
+            },
+            
+            // 显示GitHub操作说明
+            showGitHubInstructions(scanResult, githubInfo) {
+                const { owner, repo, path } = githubInfo;
+                
+                // 获取扫描到的系列文件夹名称
+                const seriesFolders = [];
+                Object.keys(scanResult).forEach(key => {
+                    const series = scanResult[key];
+                    // 从系列名称生成文件夹名称（假设文件夹名称格式为 "数字-系列名称"）
+                    // 这里简化处理，实际应该根据扫描结果生成正确的文件夹名称
+                    seriesFolders.push(series.name);
+                });
+                
+                const instructionsHtml = `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <strong>✅ 配置已保存！</strong> 但还需要完成以下步骤才能在网站上显示新产品。
+                        </div>
+                        
+                        <h4 style="margin-bottom: 1rem; color: var(--primary-color);">📂 重要：请从GitHub下载并复制文件</h4>
+                        <p style="margin-bottom: 1rem; color: #666;">
+                            由于GitHub API限制，系统无法自动下载文件。请手动从GitHub仓库下载产品图文件夹：
+                        </p>
+                        
+                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <h5 style="margin-bottom: 0.5rem;">GitHub仓库信息：</h5>
+                            <ul style="margin-left: 1.5rem; color: #333;">
+                                <li style="margin-bottom: 0.3rem;"><strong>仓库所有者：</strong>${owner}</li>
+                                <li style="margin-bottom: 0.3rem;"><strong>仓库名称：</strong>${repo}</li>
+                                <li style="margin-bottom: 0.3rem;"><strong>产品图路径：</strong>${path}</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <h5 style="margin-bottom: 0.5rem; color: #856404;">📋 操作步骤：</h5>
+                            <ol style="margin-left: 1.5rem; color: #856404;">
+                                <li style="margin-bottom: 0.5rem;">打开GitHub仓库：<a href="https://github.com/${owner}/${repo}/tree/main/${path}" target="_blank">https://github.com/${owner}/${repo}/tree/main/${path}</a></li>
+                                <li style="margin-bottom: 0.5rem;">下载产品图文件夹中的所有系列文件夹</li>
+                                <li style="margin-bottom: 0.5rem;">将下载的系列文件夹复制到：<strong>TRAE-2-6/产品图/</strong> 目录下</li>
+                                <li style="margin-bottom: 0.5rem;">将生成的 products-config.json 文件放到项目根目录</li>
+                                <li>刷新网站首页查看新产品</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                            <h5 style="margin-bottom: 0.5rem;">📁 目标路径：</h5>
+                            <code style="background: #e9ecef; padding: 0.5rem; border-radius: 4px; display: block; margin-bottom: 0.5rem;">
+                                TRAE-2-6/产品图/<br>
+                                ${seriesFolders.map(f => `├── ${f}/`).join('<br>')}
+                            </code>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="ModalManager.close()" style="width: 100%;">
+                        ✅ 我知道了
+                    </button>
+                `;
+                
+                setTimeout(() => {
+                    ModalManager.show('配置完成 - 请从GitHub下载文件', instructionsHtml);
+                }, 300);
             },
             
             // 扫描单个系列的文件夹
