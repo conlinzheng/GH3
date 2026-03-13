@@ -1696,7 +1696,6 @@ async function init() {
     
     // 产品卡片生成后初始化图片懒加载
     initLazyLoading();
-}
     
     // 绑定关闭模态框事件
     if (closeModal) {
