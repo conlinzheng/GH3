@@ -928,7 +928,102 @@ function getBasePath() {
 async function loadProductsData() {
     const basePath = getBasePath();
     
-    // 1. 首先尝试从 localStorage 加载（优先从配置页面保存的数据）
+    // 1. 首先尝试从 products-config.json 文件加载
+    try {
+        const response = await fetch(basePath + 'products-config.json');
+        if (response.ok) {
+            const config = await response.json();
+            if (config.products) {
+                const productsData = {};
+                
+                // 遍历所有系列
+                for (const key of Object.keys(config.products)) {
+                    const series = config.products[key];
+                    if (!series) continue;
+                    
+                    // 为系列名称添加翻译
+                    let seriesNameTranslations = {};
+                    if (series.name) {
+                        seriesNameTranslations = await LanguageManager.autoTranslateContent(series.name);
+                    }
+                    
+                    // 为系列描述添加翻译
+                    let seriesDescriptionTranslations = {};
+                    if (series.description) {
+                        seriesDescriptionTranslations = await LanguageManager.autoTranslateContent(series.description);
+                    }
+                    
+                    // 处理产品
+                    const processedProducts = [];
+                    for (const p of (series.products || [])) {
+                        if (!p) continue;
+                        
+                        // 为产品名称添加翻译
+                        let productNameTranslations = {};
+                        if (p.name) {
+                            productNameTranslations = await LanguageManager.autoTranslateContent(p.name);
+                        }
+                        
+                        // 为产品描述添加翻译
+                        let productDescriptionTranslations = {};
+                        if (p.description) {
+                            productDescriptionTranslations = await LanguageManager.autoTranslateContent(p.description);
+                        }
+                        
+                        // 为材质添加翻译
+                        let materialsTranslations = {};
+                        if (p.materials) {
+                            materialsTranslations = {
+                                upper: await LanguageManager.autoTranslateContent(p.materials.upper || ''),
+                                lining: await LanguageManager.autoTranslateContent(p.materials.lining || ''),
+                                sole: await LanguageManager.autoTranslateContent(p.materials.sole || '')
+                            };
+                        }
+                        
+                        // 修正图片路径
+                        const correctedImages = (p.images || []).map(img => {
+                            if (img.startsWith('http://') || img.startsWith('https://')) {
+                                return img;
+                            }
+                            return basePath + img;
+                        });
+                        
+                        processedProducts.push({
+                            id: p.id || Math.random().toString(36).substr(2, 9),
+                            name: p.name || '',
+                            nameTranslations: productNameTranslations,
+                            images: correctedImages,
+                            description: p.description || '',
+                            descriptionTranslations: productDescriptionTranslations,
+                            materials: p.materials || {},
+                            materialsTranslations: materialsTranslations,
+                            customizable: p.customizable || false,
+                            minOrder: p.minOrder || '',
+                            price: p.price || '',
+                            order: p.order || 999
+                        });
+                    }
+                    
+                    productsData[key] = {
+                        name: series.name || '',
+                        nameTranslations: seriesNameTranslations,
+                        description: series.description || '',
+                        descriptionTranslations: seriesDescriptionTranslations,
+                        order: series.order || 999,
+                        products: processedProducts
+                    };
+                }
+                
+                console.log('从 products-config.json 加载产品数据');
+                setCache('productsData', productsData, 60);
+                return productsData;
+            }
+        }
+    } catch (e) {
+        console.log('从 products-config.json 加载失败:', e.message);
+    }
+    
+    // 2. 尝试从 localStorage 加载（备用）
     try {
         const savedConfig = localStorage.getItem('websiteConfig_v2');
         if (savedConfig) {
