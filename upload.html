@@ -311,32 +311,24 @@
     <script>
         let selectedFiles = [];
 
-        // 初始化
         document.addEventListener('DOMContentLoaded', async () => {
-            // 初始化翻译功能
-            TranslationManager.init();
+            if (typeof LanguageManager !== 'undefined') {
+                LanguageManager.init();
+            }
             
-            // 添加语言切换按钮事件监听器
-            const languageButtons = document.querySelectorAll('.language-btn');
-            languageButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    TranslationManager.switchLanguage(button.dataset.lang);
-                });
-            });
-            
-            // 加载产品数据以更新导航栏
             try {
-                const productsData = await loadProductsData();
-                updateNavigation(productsData);
+                productsData = await loadProductsData();
+                if (typeof updateNavigation === 'function') {
+                    updateNavigation(productsData);
+                }
             } catch (error) {
                 console.error('加载产品数据失败:', error);
             }
             
-            loadExistingSeries();
             setupDragAndDrop();
+            loadExistingSeries();
         });
 
-        // 设置拖拽上传
         function setupDragAndDrop() {
             const dropZone = document.getElementById('dropZone');
             const fileInput = document.getElementById('fileInput');
@@ -363,13 +355,11 @@
             });
         }
 
-        // 处理选择的文件
         function handleFiles(files) {
             selectedFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
             updateFileList();
         }
 
-        // 更新文件列表显示
         function updateFileList() {
             const fileList = document.getElementById('fileList');
             fileList.innerHTML = '';
@@ -403,7 +393,6 @@
             });
         }
 
-        // 格式化文件大小
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -420,7 +409,6 @@
             const progressFill = document.getElementById('progressFill');
             const message = document.getElementById('message');
 
-            // 验证
             if (!seriesName) {
                 showMessage('请输入系列文件夹名称', 'error');
                 return;
@@ -431,55 +419,66 @@
                 return;
             }
 
-            // 检查系列名称格式
             if (!/^\d+-/.test(seriesName)) {
                 showMessage('系列名称格式不正确，请使用"数字-系列名称"格式（如：6-测试）', 'error');
                 return;
             }
 
-            // 禁用按钮
             uploadBtn.disabled = true;
-            uploadBtn.textContent = '上传中...';
+            uploadBtn.textContent = '处理中...';
             progressBar.classList.add('show');
             message.classList.remove('show');
 
             try {
-                const formData = new FormData();
-                formData.append('seriesName', seriesName);
-                selectedFiles.forEach(file => {
-                    formData.append('files', file);
-                });
-
-                // 模拟进度
                 let progress = 0;
                 const progressInterval = setInterval(() => {
-                    progress += 10;
+                    progress += 20;
                     if (progress <= 90) {
                         progressFill.style.width = progress + '%';
                         progressFill.textContent = progress + '%';
                     }
-                }, 200);
+                }, 100);
 
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const reader = new FileReader();
+                const imageUrls = await Promise.all(selectedFiles.map(file => {
+                    return new Promise(resolve => {
+                        reader.onload = e => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                }));
 
                 clearInterval(progressInterval);
                 progressFill.style.width = '100%';
                 progressFill.textContent = '100%';
 
-                const result = await response.json();
+                const seriesKey = seriesName.replace(/^\d+-/, '').toLowerCase();
+                const config = {
+                    name: seriesName.replace(/^\d+-/, ''),
+                    description: `${seriesName}系列`,
+                    products: [{
+                        id: `${seriesKey}_${Date.now()}`,
+                        name: selectedFiles[0].name.replace(/\.[^/.]+$/, ''),
+                        description: `${seriesName}款式`,
+                        images: [`产品图/${seriesName}/${selectedFiles[0].name}`],
+                        materials: { upper: 'PU', lining: '织物', sole: '橡胶' }
+                    }]
+                };
 
-                if (result.success) {
-                    showMessage(`✅ ${result.message}`, 'success');
-                    clearForm();
-                    loadExistingSeries();
+                let savedConfig = localStorage.getItem('websiteConfig_v2');
+                let configData = savedConfig ? JSON.parse(savedConfig) : { products: {} };
+                
+                if (!configData.products[seriesKey]) {
+                    configData.products[seriesKey] = config;
                 } else {
-                    showMessage(`❌ ${result.message}`, 'error');
+                    configData.products[seriesKey].products.push(...config.products);
                 }
+
+                localStorage.setItem('websiteConfig_v2', JSON.stringify(configData));
+
+                showMessage('✅ 文件已准备好，请前往 config.html 配置页面导入产品', 'success');
+                clearForm();
             } catch (error) {
-                showMessage(`❌ 上传失败：${error.message}`, 'error');
+                showMessage(`❌ 处理失败：${error.message}`, 'error');
             } finally {
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = '🚀 开始上传';
@@ -505,30 +504,29 @@
             document.getElementById('message').classList.remove('show');
         }
 
-        // 加载现有系列
-        async function loadExistingSeries() {
-            try {
-                const response = await fetch('/api/series');
-                const result = await response.json();
-
-                const seriesList = document.getElementById('seriesList');
-
-                if (result.success && result.series.length > 0) {
-                    seriesList.innerHTML = result.series.map(s => `
-                        <div class="series-item">
-                            <h4>${s.name}</h4>
-                            <p>${s.fileCount} 个文件</p>
-                        </div>
-                    `).join('');
-                } else {
+        function loadExistingSeries() {
+            const seriesList = document.getElementById('seriesList');
+            
+            fetch('products-config.json')
+                .then(res => res.json())
+                .then(config => {
+                    if (config.products && Object.keys(config.products).length > 0) {
+                        const seriesHtml = Object.keys(config.products).map(key => {
+                            const series = config.products[key];
+                            const fileCount = series.products ? series.products.reduce((sum, p) => sum + (p.images ? p.images.length : 0), 0) : 0;
+                            return `<div class="series-item">
+                                <h4>${series.name || key}</h4>
+                                <p>${fileCount} 个文件</p>
+                            </div>`;
+                        }).join('');
+                        seriesList.innerHTML = seriesHtml;
+                    } else {
+                        seriesList.innerHTML = '<p style="color: #666;">暂无系列</p>';
+                    }
+                })
+                .catch(() => {
                     seriesList.innerHTML = '<p style="color: #666;">暂无系列</p>';
-                }
-            } catch (error) {
-                document.getElementById('seriesList').innerHTML = `
-                    <p style="color: #dc3545;">加载失败：${error.message}</p>
-                    <p style="color: #666; font-size: 0.9rem;">请确保服务器已启动（运行 node server.js）</p>
-                `;
-            }
+                });
         }
     </script>
 </body>
