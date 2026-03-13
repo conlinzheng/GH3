@@ -954,44 +954,24 @@ async function loadProductsData() {
                     const series = config.products[key];
                     if (!series) continue;
                     
-                    // 为系列名称添加翻译
-                    let seriesNameTranslations = {};
-                    if (series.name) {
-                        seriesNameTranslations = await LanguageManager.autoTranslateContent(series.name);
-                    }
-                    
-                    // 为系列描述添加翻译
-                    let seriesDescriptionTranslations = {};
-                    if (series.description) {
-                        seriesDescriptionTranslations = await LanguageManager.autoTranslateContent(series.description);
-                    }
+                    // 简化处理 - 直接使用原始名称
+                    const seriesNameTranslations = series.name ? { zh: series.name, en: series.name, ko: series.name } : {};
+                    const seriesDescriptionTranslations = series.description ? { zh: series.description, en: series.description, ko: series.description } : {};
                     
                     // 处理产品
                     const processedProducts = [];
                     for (const p of (series.products || [])) {
                         if (!p) continue;
                         
-                        // 为产品名称添加翻译
-                        let productNameTranslations = {};
-                        if (p.name) {
-                            productNameTranslations = await LanguageManager.autoTranslateContent(p.name);
-                        }
+                        // 简化翻译处理
+                        const productNameTranslations = p.name ? { zh: p.name, en: p.name, ko: p.name } : {};
+                        const productDescriptionTranslations = p.description ? { zh: p.description, en: p.description, ko: p.description } : {};
                         
-                        // 为产品描述添加翻译
-                        let productDescriptionTranslations = {};
-                        if (p.description) {
-                            productDescriptionTranslations = await LanguageManager.autoTranslateContent(p.description);
-                        }
-                        
-                        // 为材质添加翻译
-                        let materialsTranslations = {};
-                        if (p.materials) {
-                            materialsTranslations = {
-                                upper: await LanguageManager.autoTranslateContent(p.materials.upper || ''),
-                                lining: await LanguageManager.autoTranslateContent(p.materials.lining || ''),
-                                sole: await LanguageManager.autoTranslateContent(p.materials.sole || '')
-                            };
-                        }
+                        const materialsTranslations = p.materials ? {
+                            upper: { zh: p.materials.upper || '', en: p.materials.upper || '', ko: p.materials.upper || '' },
+                            lining: { zh: p.materials.lining || '', en: p.materials.lining || '', ko: p.materials.lining || '' },
+                            sole: { zh: p.materials.sole || '', en: p.materials.sole || '', ko: p.materials.sole || '' }
+                        } : {};
                         
                         // 修正图片路径
                         const correctedImages = (p.images || []).map(img => {
@@ -1843,57 +1823,57 @@ async function init() {
     console.log('加载的产品数据:', productsData);
     console.log('产品数据键数:', Object.keys(productsData).length);
     
-    // 为现有数据添加翻译（如果没有翻译）
-    for (const key of Object.keys(productsData)) {
-        const series = productsData[key];
-        if (!series) continue;
-        
-        // 为系列名称添加翻译
-        if (!series.nameTranslations || Object.keys(series.nameTranslations).length === 0) {
-            series.nameTranslations = await LanguageManager.autoTranslateContent(series.name);
-            console.log('为系列添加翻译:', series.name, series.nameTranslations);
-        }
-        
-        // 为系列描述添加翻译
-        if (!series.descriptionTranslations || Object.keys(series.descriptionTranslations).length === 0) {
-            series.descriptionTranslations = await LanguageManager.autoTranslateContent(series.description);
-            console.log('为系列描述添加翻译:', series.description, series.descriptionTranslations);
-        }
-        
-        // 为产品添加翻译
-        if (series.products) {
-            for (const product of series.products) {
-                if (!product) continue;
-                
-                // 为产品名称添加翻译
-                if (!product.nameTranslations || Object.keys(product.nameTranslations).length === 0) {
-                    product.nameTranslations = await LanguageManager.autoTranslateContent(product.name);
-                    console.log('为产品添加翻译:', product.name, product.nameTranslations);
-                }
-                
-                // 为产品描述添加翻译
-                if (!product.descriptionTranslations || Object.keys(product.descriptionTranslations).length === 0) {
-                    product.descriptionTranslations = await LanguageManager.autoTranslateContent(product.description);
-                    console.log('为产品描述添加翻译:', product.description, product.descriptionTranslations);
-                }
-                
-                // 为材质添加翻译
-                if (!product.materialsTranslations || Object.keys(product.materialsTranslations).length === 0) {
-                    if (product.materials) {
-                        product.materialsTranslations = {
-                            upper: await LanguageManager.autoTranslateContent(product.materials.upper || ''),
-                            lining: await LanguageManager.autoTranslateContent(product.materials.lining || ''),
-                            sole: await LanguageManager.autoTranslateContent(product.materials.sole || '')
-                        };
-                        console.log('为材质添加翻译:', product.materials, product.materialsTranslations);
-                    }
-                }
-            }
-        }
+    // 如果产品数据为空，显示空状态
+    if (!productsData || Object.keys(productsData).length === 0) {
+        console.log('产品数据为空，显示空状态');
+        showEmptyState();
+        return;
     }
     
-    // 加载产品并等待完成
-    loadProducts();
+    // 动态更新导航栏
+    updateNavigation(productsData);
+    
+    // 动态生成产品系列section
+    generateProductSections(productsData);
+    
+    // 生成产品系列section后立即检查哈希值并滚动到对应系列
+    checkHashAndScroll();
+    
+    // 加载产品卡片
+    console.log('开始加载产品卡片');
+    Object.keys(productsData).forEach(category => {
+        console.log('加载系列:', category);
+        const container = document.getElementById(`${encodeURIComponent(category)}-products`);
+        console.log('容器:', container);
+        if (container) {
+            const series = productsData[category];
+            console.log('系列产品:', series.products);
+            if (series.products && series.products.length > 0) {
+                // 对产品进行排序（按order字段排序）
+                const sortedProducts = [...series.products].sort((a, b) => {
+                    return (a.order || 999) - (b.order || 999);
+                });
+                
+                // 使用文档片段减少DOM操作
+                const fragment = document.createDocumentFragment();
+                sortedProducts.forEach(product => {
+                    console.log('创建产品卡片:', product.name);
+                    const productCard = createProductCard(product, category);
+                    fragment.appendChild(productCard);
+                });
+                // 一次性添加所有卡片
+                container.appendChild(fragment);
+            } else {
+                console.log('系列没有产品:', category);
+            }
+        } else {
+            console.log('找不到容器:', `${encodeURIComponent(category)}-products`);
+        }
+    });
+    
+    // 产品卡片生成后初始化图片懒加载
+    initLazyLoading();
+}
     
     // 绑定关闭模态框事件
     if (closeModal) {
