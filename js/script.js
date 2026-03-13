@@ -61,9 +61,85 @@ function getBasePath() {
     return './';
 }
 
+const GITHUB_OWNER = 'conlinzheng';
+const GITHUB_REPO = 'GH3';
+const PRODUCT_IMAGE_PATH = '产品图';
+
+async function scanGitHubProductImages() {
+    try {
+        const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${PRODUCT_IMAGE_PATH}`;
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            console.warn('GitHub API 请求失败，尝试使用本地配置');
+            return null;
+        }
+        
+        const folders = await response.json();
+        
+        if (!Array.isArray(folders)) {
+            return null;
+        }
+        
+        const productsData = {};
+        
+        for (const folder of folders) {
+            if (folder.type !== 'dir') continue;
+            
+            const seriesName = folder.name.replace(/^\d+-/, '');
+            const seriesKey = folder.name.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '');
+            
+            const imagesResponse = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${PRODUCT_IMAGE_PATH}/${folder.name}`);
+            const images = await imagesResponse.json();
+            
+            if (!Array.isArray(images) || images.length === 0) continue;
+            
+            const products = images
+                .filter(img => img.name.match(/\.(jpg|jpeg|png|gif)$/i))
+                .map((img, index) => {
+                    const productName = img.name.replace(/\.[^/.]+$/, '').replace(/_\d+_800x600$/, '').replace(/\s*\(\d+\)$/, '');
+                    return {
+                        id: `${seriesKey}_${index + 1}`,
+                        name: productName,
+                        nameTranslations: { zh: productName, en: productName, ko: productName },
+                        images: [img.download_url],
+                        description: `${seriesName}款式`,
+                        materials: { upper: 'PU', lining: '织物', sole: '橡胶' },
+                        customizable: false,
+                        minOrder: '',
+                        price: '',
+                        order: index + 1
+                    };
+                });
+            
+            if (products.length > 0) {
+                productsData[seriesKey] = {
+                    name: seriesName,
+                    nameTranslations: { zh: seriesName, en: seriesName, ko: seriesName },
+                    description: `${seriesName}鞋款`,
+                    order: parseInt(folder.name) || 999,
+                    products: products
+                };
+            }
+        }
+        
+        return productsData;
+    } catch (e) {
+        console.warn('GitHub 扫描失败:', e);
+        return null;
+    }
+}
+
 let productsData = {};
 
 async function loadProductsData() {
+    const githubProducts = await scanGitHubProductImages();
+    
+    if (githubProducts && Object.keys(githubProducts).length > 0) {
+        productsData = githubProducts;
+        return productsData;
+    }
+    
     const basePath = getBasePath();
     const configUrl = basePath + 'products-config.json';
     
