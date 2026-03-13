@@ -934,285 +934,106 @@ async function loadProductsData() {
     console.log('Base path:', basePath);
     console.log('Fetching from:', configUrl);
     
+    // 辅助函数：创建简单的翻译对象
+    const createTranslation = (text) => {
+        if (!text) return {};
+        return { zh: text, en: text, ko: text };
+    };
+    
+    // 辅助函数：处理产品数据
+    const processProductData = (config) => {
+        if (!config.products || Object.keys(config.products).length === 0) {
+            return {};
+        }
+        
+        const productsData = {};
+        
+        for (const key of Object.keys(config.products)) {
+            const series = config.products[key];
+            if (!series) continue;
+            
+            // 处理产品
+            const processedProducts = [];
+            for (const p of (series.products || [])) {
+                if (!p) continue;
+                
+                // 修正图片路径
+                const correctedImages = (p.images || []).map(img => {
+                    if (img.startsWith('http://') || img.startsWith('https://')) {
+                        return img;
+                    }
+                    return basePath + img;
+                });
+                
+                processedProducts.push({
+                    id: p.id || Math.random().toString(36).substr(2, 9),
+                    name: p.name || '',
+                    nameTranslations: createTranslation(p.name),
+                    images: correctedImages,
+                    description: p.description || '',
+                    descriptionTranslations: createTranslation(p.description),
+                    materials: p.materials || {},
+                    materialsTranslations: p.materials ? {
+                        upper: createTranslation(p.materials.upper),
+                        lining: createTranslation(p.materials.lining),
+                        sole: createTranslation(p.materials.sole)
+                    } : {},
+                    customizable: p.customizable || false,
+                    minOrder: p.minOrder || '',
+                    price: p.price || '',
+                    order: p.order || 999
+                });
+            }
+            
+            productsData[key] = {
+                name: series.name || '',
+                nameTranslations: createTranslation(series.name),
+                description: series.description || '',
+                descriptionTranslations: createTranslation(series.description),
+                order: series.order || 999,
+                products: processedProducts
+            };
+        }
+        
+        return productsData;
+    };
+    
     // 1. 首先尝试从 products-config.json 文件加载
     try {
         const response = await fetch(configUrl);
         console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
         
-        if (!response.ok) {
-            console.error('Failed to fetch products-config.json:', response.status, response.statusText);
-        } else {
+        if (response.ok) {
             const config = await response.json();
             console.log('Loaded config, products keys:', config.products ? Object.keys(config.products) : 'none');
             
             if (config.products && Object.keys(config.products).length > 0) {
-                const productsData = {};
-                
-                // 遍历所有系列
-                for (const key of Object.keys(config.products)) {
-                    const series = config.products[key];
-                    if (!series) continue;
-                    
-                    // 简化处理 - 直接使用原始名称
-                    const seriesNameTranslations = series.name ? { zh: series.name, en: series.name, ko: series.name } : {};
-                    const seriesDescriptionTranslations = series.description ? { zh: series.description, en: series.description, ko: series.description } : {};
-                    
-                    // 处理产品
-                    const processedProducts = [];
-                    for (const p of (series.products || [])) {
-                        if (!p) continue;
-                        
-                        // 简化翻译处理
-                        const productNameTranslations = p.name ? { zh: p.name, en: p.name, ko: p.name } : {};
-                        const productDescriptionTranslations = p.description ? { zh: p.description, en: p.description, ko: p.description } : {};
-                        
-                        const materialsTranslations = p.materials ? {
-                            upper: { zh: p.materials.upper || '', en: p.materials.upper || '', ko: p.materials.upper || '' },
-                            lining: { zh: p.materials.lining || '', en: p.materials.lining || '', ko: p.materials.lining || '' },
-                            sole: { zh: p.materials.sole || '', en: p.materials.sole || '', ko: p.materials.sole || '' }
-                        } : {};
-                        
-                        // 修正图片路径
-                        const correctedImages = (p.images || []).map(img => {
-                            if (img.startsWith('http://') || img.startsWith('https://')) {
-                                return img;
-                            }
-                            return basePath + img;
-                        });
-                        
-                        processedProducts.push({
-                            id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.name || '',
-                            nameTranslations: productNameTranslations,
-                            images: correctedImages,
-                            description: p.description || '',
-                            descriptionTranslations: productDescriptionTranslations,
-                            materials: p.materials || {},
-                            materialsTranslations: materialsTranslations,
-                            customizable: p.customizable || false,
-                            minOrder: p.minOrder || '',
-                            price: p.price || '',
-                            order: p.order || 999
-                        });
-                    }
-                    
-                    productsData[key] = {
-                        name: series.name || '',
-                        nameTranslations: seriesNameTranslations,
-                        description: series.description || '',
-                        descriptionTranslations: seriesDescriptionTranslations,
-                        order: series.order || 999,
-                        products: processedProducts
-                    };
-                }
-                
+                const productsData = processProductData(config);
                 console.log('从 products-config.json 加载产品数据');
                 setCache('productsData', productsData, 60);
                 return productsData;
             }
+        } else {
+            console.error('Failed to fetch products-config.json:', response.status);
         }
     } catch (e) {
         console.error('从 products-config.json 加载失败:', e);
     }
     
-    // 2. 尝试从 localStorage 加载（备用）
+    // 2. 尝试从 localStorage 加载
     try {
         const savedConfig = localStorage.getItem('websiteConfig_v2');
         if (savedConfig) {
             const config = JSON.parse(savedConfig);
-            if (config.products) {
-                const productsData = {};
-                
-                // 遍历所有系列
-                for (const key of Object.keys(config.products)) {
-                    const series = config.products[key];
-                    if (!series) continue;
-                    
-                    // 为系列名称添加翻译（总是从词典获取最新翻译）
-                    let seriesNameTranslations = {};
-                    if (series.name) {
-                        seriesNameTranslations = await LanguageManager.autoTranslateContent(series.name);
-                    }
-                    
-                    // 为系列描述添加翻译（总是从词典获取最新翻译）
-                    let seriesDescriptionTranslations = {};
-                    if (series.description) {
-                        seriesDescriptionTranslations = await LanguageManager.autoTranslateContent(series.description);
-                    }
-                    
-                    // 处理产品
-                    const processedProducts = [];
-                    for (const p of (series.products || [])) {
-                        if (!p) continue;
-                        
-                        // 为产品名称添加翻译（总是从词典获取最新翻译）
-                        let productNameTranslations = {};
-                        if (p.name) {
-                            productNameTranslations = await LanguageManager.autoTranslateContent(p.name);
-                        }
-                        
-                        // 为产品描述添加翻译（总是从词典获取最新翻译）
-                        let productDescriptionTranslations = {};
-                        if (p.description) {
-                            productDescriptionTranslations = await LanguageManager.autoTranslateContent(p.description);
-                        }
-                        
-                        // 为材质添加翻译（总是从词典获取最新翻译）
-                        let materialsTranslations = {};
-                        if (p.materials) {
-                            materialsTranslations = {
-                                upper: await LanguageManager.autoTranslateContent(p.materials.upper || ''),
-                                lining: await LanguageManager.autoTranslateContent(p.materials.lining || ''),
-                                sole: await LanguageManager.autoTranslateContent(p.materials.sole || '')
-                            };
-                        }
-                        
-                        // 修正图片路径
-                        const correctedImages = (p.images || []).map(img => {
-                            // 如果图片路径已经是完整的 URL，保持不变
-                            if (img.startsWith('http://') || img.startsWith('https://')) {
-                                return img;
-                            }
-                            // 否则，添加基础路径
-                            return basePath + img;
-                        });
-                        
-                        processedProducts.push({
-                            id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.name || '',
-                            nameTranslations: productNameTranslations,
-                            images: correctedImages,
-                            description: p.description || '',
-                            descriptionTranslations: productDescriptionTranslations,
-                            materials: p.materials || {},
-                            materialsTranslations: materialsTranslations,
-                            infoTranslations: p.infoTranslations || {},
-                            customizable: p.customizable || false,
-                            minOrder: p.minOrder || '',
-                            price: p.price || '',
-                            order: p.order || 999
-                        });
-                    }
-                    
-                    productsData[key] = {
-                        name: series.name || '',
-                        nameTranslations: seriesNameTranslations,
-                        description: series.description || '',
-                        descriptionTranslations: seriesDescriptionTranslations,
-                        order: series.order || 999,
-                        products: processedProducts
-                    };
-                }
-                
+            if (config.products && Object.keys(config.products).length > 0) {
+                const productsData = processProductData(config);
                 console.log('从 localStorage 加载产品数据');
-                console.log('产品数据:', productsData);
-                // 缓存数据，过期时间为1小时
                 setCache('productsData', productsData, 60);
                 return productsData;
             }
         }
     } catch (e) {
-        console.error('从 localStorage 加载产品数据失败:', e);
-    }
-    
-    // 2. 尝试从 products-config.json 加载
-    try {
-        const response = await fetch(basePath + 'products-config.json');
-        if (response.ok) {
-            const config = await response.json();
-            if (config.products) {
-                const productsData = {};
-                
-                // 遍历所有系列
-                for (const key of Object.keys(config.products)) {
-                    const series = config.products[key];
-                    if (!series) continue;
-                    
-                    // 为系列名称添加翻译（总是从词典获取最新翻译）
-                    let seriesNameTranslations = {};
-                    if (series.name) {
-                        seriesNameTranslations = await LanguageManager.autoTranslateContent(series.name);
-                    }
-                    
-                    // 为系列描述添加翻译（总是从词典获取最新翻译）
-                    let seriesDescriptionTranslations = {};
-                    if (series.description) {
-                        seriesDescriptionTranslations = await LanguageManager.autoTranslateContent(series.description);
-                    }
-                    
-                    // 处理产品
-                    const processedProducts = [];
-                    for (const p of (series.products || [])) {
-                        if (!p) continue;
-                        
-                        // 为产品名称添加翻译（总是从词典获取最新翻译）
-                        let productNameTranslations = {};
-                        if (p.name) {
-                            productNameTranslations = await LanguageManager.autoTranslateContent(p.name);
-                        }
-                        
-                        // 为产品描述添加翻译（总是从词典获取最新翻译）
-                        let productDescriptionTranslations = {};
-                        if (p.description) {
-                            productDescriptionTranslations = await LanguageManager.autoTranslateContent(p.description);
-                        }
-                        
-                        // 为材质添加翻译（总是从词典获取最新翻译）
-                        let materialsTranslations = {};
-                        if (p.materials) {
-                            materialsTranslations = {
-                                upper: await LanguageManager.autoTranslateContent(p.materials.upper || ''),
-                                lining: await LanguageManager.autoTranslateContent(p.materials.lining || ''),
-                                sole: await LanguageManager.autoTranslateContent(p.materials.sole || '')
-                            };
-                        }
-                        
-                        // 修正图片路径
-                        const correctedImages = (p.images || []).map(img => {
-                            // 如果图片路径已经是完整的 URL，保持不变
-                            if (img.startsWith('http://') || img.startsWith('https://')) {
-                                return img;
-                            }
-                            // 否则，添加基础路径
-                            return basePath + img;
-                        });
-                        
-                        processedProducts.push({
-                            id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.name || '',
-                            nameTranslations: productNameTranslations,
-                            images: correctedImages,
-                            description: p.description || '',
-                            descriptionTranslations: productDescriptionTranslations,
-                            materials: p.materials || {},
-                            materialsTranslations: materialsTranslations,
-                            infoTranslations: p.infoTranslations || {},
-                            customizable: p.customizable || false,
-                            minOrder: p.minOrder || '',
-                            price: p.price || '',
-                            order: p.order || 999
-                        });
-                    }
-                    
-                    productsData[key] = {
-                        name: series.name || '',
-                        nameTranslations: seriesNameTranslations,
-                        description: series.description || '',
-                        descriptionTranslations: seriesDescriptionTranslations,
-                        order: series.order || 999,
-                        products: processedProducts
-                    };
-                }
-                
-                console.log('从 products-config.json 加载产品数据');
-                // 缓存数据，过期时间为1小时
-                setCache('productsData', productsData, 60);
-                return productsData;
-            }
-        }
-    } catch (e) {
-        console.log('未找到 products-config.json，尝试其他数据源');
+        console.error('从 localStorage 加载失败:', e);
     }
     
     // 3. 尝试从缓存加载
@@ -1222,8 +1043,7 @@ async function loadProductsData() {
         return cachedData;
     }
     
-    // 4. 使用默认数据 - 初始为空，等待扫描产品图文件夹
-    console.log('使用默认产品数据（空）');
+    console.log('没有找到产品数据');
     return {};
 }
 
