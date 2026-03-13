@@ -1229,7 +1229,26 @@
             },
 
             // 加载配置
-            loadConfig() {
+            async loadConfig() {
+                // 1. 首先尝试从 products-config.json 文件加载
+                try {
+                    const basePath = this.getBasePath();
+                    const response = await fetch(basePath + 'products-config.json');
+                    if (response.ok) {
+                        const config = await response.json();
+                        if (config.products && Object.keys(config.products).length > 0) {
+                            console.log('从 products-config.json 加载配置');
+                            this.currentConfig = config;
+                            // 保存到 localStorage
+                            this.saveConfig();
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.log('从 products-config.json 加载失败:', e.message);
+                }
+                
+                // 2. 从 localStorage 加载
                 try {
                     const saved = localStorage.getItem('websiteConfig_v2');
                     if (saved) {
@@ -1243,6 +1262,18 @@
                     console.error('加载配置失败:', e);
                     this.currentConfig = this.deepClone(this.defaultConfig);
                 }
+            },
+            
+            // 获取基础路径
+            getBasePath() {
+                const pathname = window.location.pathname;
+                if (pathname.includes('/GH3/')) {
+                    return '/GH3/';
+                }
+                if (pathname.includes('/GH/')) {
+                    return '/GH/';
+                }
+                return '/';
             },
 
             // 清理空系列（没有产品的系列）
