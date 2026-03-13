@@ -1,6 +1,6 @@
 {
-    "version": "2026-03-13T12:00:00.000Z",
-    "siteTitle": "6ft - 高品质鞋类品牌",
+    "version": "2026-03-13T12:30:00.000Z",
+    "siteTitle": "6FT - 高品质鞋类品牌",
     "siteDescription": "高品质鞋类产品展示",
     "products": {
         "pu": {
@@ -8,7 +8,7 @@
             "description": "PU系列鞋款",
             "products": [
                 {
-                    "id": "pu1",
+                    "id": "pu_00A",
                     "name": "00A",
                     "description": "PU系列款式",
                     "images": [
@@ -27,7 +27,7 @@
             "description": "真皮系列鞋款",
             "products": [
                 {
-                    "id": "真皮1",
+                    "id": "真皮_B5",
                     "name": "B5",
                     "description": "真皮系列款式",
                     "images": [
@@ -46,7 +46,7 @@
             "description": "短靴系列鞋款",
             "products": [
                 {
-                    "id": "短靴1",
+                    "id": "短靴_B6",
                     "name": "B6",
                     "description": "短靴系列款式",
                     "images": [
@@ -60,7 +60,7 @@
                     }
                 },
                 {
-                    "id": "短靴2",
+                    "id": "短靴_B7",
                     "name": "B7",
                     "description": "短靴系列款式",
                     "images": [
@@ -79,7 +79,7 @@
             "description": "春季鞋款",
             "products": [
                 {
-                    "id": "春季1",
+                    "id": "春季_勃肯1",
                     "name": "勃肯1",
                     "description": "春季款式",
                     "images": [
@@ -98,7 +98,7 @@
             "description": "夏季鞋款",
             "products": [
                 {
-                    "id": "夏季1",
+                    "id": "夏季_产品1",
                     "name": "产品1",
                     "description": "夏季款式",
                     "images": [
@@ -112,7 +112,7 @@
                     }
                 },
                 {
-                    "id": "夏季2",
+                    "id": "夏季_产品2",
                     "name": "产品2",
                     "description": "夏季款式",
                     "images": [
@@ -136,7 +136,7 @@
             "description": "秋季鞋款",
             "products": [
                 {
-                    "id": "秋季1",
+                    "id": "秋季_圆头",
                     "name": "圆头",
                     "description": "秋季款式",
                     "images": [
@@ -150,7 +150,7 @@
                     }
                 },
                 {
-                    "id": "秋季2",
+                    "id": "秋季_拖鞋",
                     "name": "拖鞋",
                     "description": "秋季款式",
                     "images": [
@@ -164,7 +164,7 @@
                     }
                 },
                 {
-                    "id": "秋季3",
+                    "id": "秋季_拖鞋2",
                     "name": "拖鞋2",
                     "description": "秋季款式",
                     "images": [
@@ -178,7 +178,7 @@
                     }
                 },
                 {
-                    "id": "秋季4",
+                    "id": "秋季_新款1",
                     "name": "新款1",
                     "description": "秋季新款",
                     "images": [
