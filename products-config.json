@@ -1,24 +1,127 @@
 {
-    "version": "2026-03-12T11:38:31.617Z",
-    "siteTitle": "666",
-    "siteDescription": "99高品质鞋类产品展示",
+    "version": "2026-03-13T12:00:00.000Z",
+    "siteTitle": "6ft - 高品质鞋类品牌",
+    "siteDescription": "高品质鞋类产品展示",
     "products": {
-        "冬季": {
-            "name": "冬季",
-            "description": "冬季鞋款",
+        "pu": {
+            "name": "PU系列",
+            "description": "PU系列鞋款",
             "products": [
                 {
-                    "id": "冬季1",
-                    "name": "B7",
-                    "description": "冬季B7",
+                    "id": "pu1",
+                    "name": "00A",
+                    "description": "PU系列款式",
                     "images": [
-                        "产品图/8-冬季/B7 (1).jpg",
-                        "产品图/8-冬季/B7 (2).jpg",
-                        "产品图/8-冬季/B7 (3).jpg",
-                        "产品图/8-冬季/B7 (4).jpg",
-                        "产品图/8-冬季/B7 (5).jpg",
-                        "产品图/8-冬季/B7 (6).jpg",
-                        "产品图/8-冬季/B7 (7).jpg"
+                        "产品图/1-PU系列/00A (2)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                }
+            ]
+        },
+        "真皮": {
+            "name": "真皮系列",
+            "description": "真皮系列鞋款",
+            "products": [
+                {
+                    "id": "真皮1",
+                    "name": "B5",
+                    "description": "真皮系列款式",
+                    "images": [
+                        "产品图/2-真皮系列/B5 (2)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "真皮",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                }
+            ]
+        },
+        "短靴": {
+            "name": "短靴系列",
+            "description": "短靴系列鞋款",
+            "products": [
+                {
+                    "id": "短靴1",
+                    "name": "B6",
+                    "description": "短靴系列款式",
+                    "images": [
+                        "产品图/3-短靴系列/B6 (1)_800x600.jpg",
+                        "产品图/3-短靴系列/B6 (2)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                },
+                {
+                    "id": "短靴2",
+                    "name": "B7",
+                    "description": "短靴系列款式",
+                    "images": [
+                        "产品图/3-短靴系列/B7 (1)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                }
+            ]
+        },
+        "春季": {
+            "name": "春季",
+            "description": "春季鞋款",
+            "products": [
+                {
+                    "id": "春季1",
+                    "name": "勃肯1",
+                    "description": "春季款式",
+                    "images": [
+                        "产品图/5-春季/勃肯1 (1)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                }
+            ]
+        },
+        "夏季": {
+            "name": "夏季",
+            "description": "夏季鞋款",
+            "products": [
+                {
+                    "id": "夏季1",
+                    "name": "产品1",
+                    "description": "夏季款式",
+                    "images": [
+                        "产品图/6-夏季/产品1 (1)_800x600.jpg",
+                        "产品图/6-夏季/产品1 (2)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                },
+                {
+                    "id": "夏季2",
+                    "name": "产品2",
+                    "description": "夏季款式",
+                    "images": [
+                        "产品图/6-夏季/产品2 (1)_800x600.jpg",
+                        "产品图/6-夏季/产品2 (2)_800x600.jpg",
+                        "产品图/6-夏季/产品2 (3)_800x600.jpg",
+                        "产品图/6-夏季/产品2 (4)_800x600.jpg",
+                        "产品图/6-夏季/产品2 (5)_800x600.jpg",
+                        "产品图/6-夏季/产品2 (6)_800x600.jpg"
                     ],
                     "materials": {
                         "upper": "PU",
@@ -31,33 +134,55 @@
         "秋季": {
             "name": "秋季",
             "description": "秋季鞋款",
-            "products": []
-        },
-        "夏季": {
-            "name": "夏季",
-            "description": "夏季鞋款",
-            "products": []
-        },
-        "春季": {
-            "name": "春季",
-            "description": "春季鞋款",
-            "products": []
-        },
-        "乐福": {
-            "name": "乐福系列",
-            "description": "乐福系列鞋款",
             "products": [
                 {
-                    "id": "乐福1",
-                    "name": "B5",
-                    "description": "乐福系列B5",
+                    "id": "秋季1",
+                    "name": "圆头",
+                    "description": "秋季款式",
                     "images": [
-                        "产品图/4-乐福系列/B5 (1).jpg",
-                        "产品图/4-乐福系列/B5 (2).jpg",
-                        "产品图/4-乐福系列/B5 (3).jpg",
-                        "产品图/4-乐福系列/B5 (4).jpg",
-                        "产品图/4-乐福系列/B5 (5).jpg",
-                        "产品图/4-乐福系列/B5 (6).jpg"
+                        "产品图/7-秋季/圆头 (1)_800x600.jpg",
+                        "产品图/7-秋季/圆头 (2)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                },
+                {
+                    "id": "秋季2",
+                    "name": "拖鞋",
+                    "description": "秋季款式",
+                    "images": [
+                        "产品图/7-秋季/拖鞋 (1)_800x600.jpg",
+                        "产品图/7-秋季/拖鞋 (2)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                },
+                {
+                    "id": "秋季3",
+                    "name": "拖鞋2",
+                    "description": "秋季款式",
+                    "images": [
+                        "产品图/7-秋季/拖鞋2 (1)_800x600.jpg",
+                        "产品图/7-秋季/拖鞋2 (2)_800x600.jpg"
+                    ],
+                    "materials": {
+                        "upper": "PU",
+                        "lining": "织物",
+                        "sole": "橡胶"
+                    }
+                },
+                {
+                    "id": "秋季4",
+                    "name": "新款1",
+                    "description": "秋季新款",
+                    "images": [
+                        "产品图/7-秋季/新款1 (1)_800x600.jpg"
                     ],
                     "materials": {
                         "upper": "PU",
@@ -66,21 +191,6 @@
                     }
                 }
             ]
-        },
-        "短靴": {
-            "name": "短靴系列",
-            "description": "短靴系列鞋款",
-            "products": []
-        },
-        "真皮": {
-            "name": "真皮系列",
-            "description": "真皮系列鞋款",
-            "products": []
-        },
-        "pu": {
-            "name": "PU系列",
-            "description": "PU系列鞋款",
-            "products": []
         }
     }
 }
