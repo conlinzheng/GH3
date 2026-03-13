@@ -1,4 +1,5 @@
 // 翻译管理模块
+console.log('=== script.js 开始加载 ===');
 const TranslationManager = {
     // 支持的语言
     supportedLanguages: ['zh', 'en', 'ko'],
@@ -929,6 +930,7 @@ function getBasePath() {
 
 // 异步加载产品数据
 async function loadProductsData() {
+    console.log('=== loadProductsData 开始执行 ===');
     const basePath = getBasePath();
     const configUrl = basePath + 'products-config.json';
     console.log('Base path:', basePath);
@@ -1630,6 +1632,7 @@ function closeProductModal() {
 
 // 初始化函数
 async function init() {
+    console.log('=== init 函数开始执行 ===');
     initSlider();
     
     // 清除缓存以确保加载最新数据
