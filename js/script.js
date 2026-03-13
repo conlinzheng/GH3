@@ -1034,7 +1034,8 @@ async function loadProductsData() {
             }
         }
     } catch (e) {
-        console.log('从 products-config.json 加载失败:', e.message);
+        console.error('从 products-config.json 加载失败:', e);
+        alert('无法加载产品配置文件，请检查网络连接。错误: ' + e.message);
     }
     
     // 2. 尝试从 localStorage 加载（备用）
