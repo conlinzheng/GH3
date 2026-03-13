@@ -917,8 +917,11 @@ const LanguageManager = TranslationManager;
 
 // 获取基础路径
 function getBasePath() {
-    // 检查当前 URL 是否包含 /GH/ 路径（GitHub Pages 部署路径）
-    if (window.location.pathname.includes('/GH/')) {
+    const pathname = window.location.pathname;
+    if (pathname.includes('/GH3/')) {
+        return '/GH3/';
+    }
+    if (pathname.includes('/GH/')) {
         return '/GH/';
     }
     return '/';
