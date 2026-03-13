@@ -290,6 +290,72 @@ function loadProducts() {
     }
 }
 
+function loadWebsiteConfig() {
+    try {
+        const saved = localStorage.getItem('websiteConfig_v2');
+        if (!saved) return null;
+        return JSON.parse(saved);
+    } catch (e) {
+        console.error('加载配置失败:', e);
+        return null;
+    }
+}
+
+function applyFooterConfig(config) {
+    if (!config || !config.footerInfo) return;
+    
+    const footerInfo = config.footerInfo;
+    
+    const aboutTitle = document.getElementById('footerAboutTitle');
+    if (aboutTitle && footerInfo.aboutTitle) {
+        aboutTitle.textContent = footerInfo.aboutTitle;
+    }
+    
+    const aboutText = document.getElementById('footerAboutText');
+    if (aboutText && footerInfo.aboutText) {
+        aboutText.textContent = footerInfo.aboutText;
+    }
+    
+    const emailContainer = document.getElementById('footerEmailContainer');
+    const emailSpan = document.getElementById('footerEmail');
+    if (emailContainer && emailSpan && footerInfo.email) {
+        emailSpan.textContent = footerInfo.email;
+        emailContainer.style.display = 'flex';
+    }
+    
+    const phoneContainer = document.getElementById('footerPhoneContainer');
+    const phoneSpan = document.getElementById('footerPhone');
+    if (phoneContainer && phoneSpan && footerInfo.phone) {
+        phoneSpan.textContent = footerInfo.phone;
+        phoneContainer.style.display = 'flex';
+    }
+    
+    const addressContainer = document.getElementById('footerAddressContainer');
+    const addressSpan = document.getElementById('footerAddress');
+    if (addressContainer && addressSpan && footerInfo.address) {
+        addressSpan.textContent = footerInfo.address;
+        addressContainer.style.display = 'flex';
+    }
+    
+    const hoursContainer = document.getElementById('footerHoursContainer');
+    const hoursSpan = document.getElementById('footerBusinessHours');
+    if (hoursContainer && hoursSpan && footerInfo.businessHours) {
+        hoursSpan.textContent = footerInfo.businessHours;
+        hoursContainer.style.display = 'flex';
+    }
+    
+    if (footerInfo.socialLinks && footerInfo.socialLinks.length > 0) {
+        const container = document.getElementById('socialLinksContainer');
+        if (container) {
+            container.innerHTML = footerInfo.socialLinks.map(link => `
+                <a href="${link.url || '#'}" target="_blank" rel="noopener noreferrer">
+                    <img src="${link.icon || ''}" alt="${link.name || 'Social'}">
+                </a>
+            `).join('');
+        }
+    }
+}
+
 function initSlider() {
     const sliderItems = document.querySelectorAll('.slider-item');
     if (sliderItems.length <= 1) return;
@@ -310,6 +376,8 @@ function initSlider() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        const websiteConfig = loadWebsiteConfig();
+        
         initSlider();
         
         productsData = await loadProductsData();
@@ -321,8 +389,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (isIndexPage) {
             loadProducts();
+            if (websiteConfig) {
+                applyFooterConfig(websiteConfig);
+            }
         } else {
             updateNavigation(productsData);
+            if (websiteConfig) {
+                applyFooterConfig(websiteConfig);
+            }
         }
         
         window.onhashchange = () => {
