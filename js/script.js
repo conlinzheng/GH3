@@ -1659,7 +1659,13 @@ async function init() {
     // 动态生成产品系列section
     generateProductSections(productsData);
     
-    // 生成产品系列section后立即检查哈希值并滚动到对应系列
+    // 滚动到产品区域
+    const productContainer = document.getElementById('product-series-container');
+    if (productContainer) {
+        productContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // 生成产品系列section后检查哈希值并滚动到对应系列
     checkHashAndScroll();
     
     // 加载产品卡片
