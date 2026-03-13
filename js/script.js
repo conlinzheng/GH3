@@ -930,16 +930,20 @@ function getBasePath() {
 // 异步加载产品数据
 async function loadProductsData() {
     const basePath = getBasePath();
+    const configUrl = basePath + 'products-config.json';
     console.log('Base path:', basePath);
-    console.log('Fetching from:', basePath + 'products-config.json');
+    console.log('Fetching from:', configUrl);
     
     // 1. 首先尝试从 products-config.json 文件加载
     try {
-        const response = await fetch(basePath + 'products-config.json');
+        const response = await fetch(configUrl);
         console.log('Response status:', response.status);
         console.log('Response ok:', response.ok);
         
-        if (response.ok) {
+        if (!response.ok) {
+            console.error('Failed to fetch products-config.json:', response.status, response.statusText);
+            alert('无法加载产品配置文件，请检查网络连接。URL: ' + configUrl + ', 状态: ' + response.status);
+        } else {
             const config = await response.json();
             console.log('Loaded config, products keys:', config.products ? Object.keys(config.products) : 'none');
             
