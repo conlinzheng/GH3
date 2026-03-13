@@ -1,4 +1,4 @@
-// 简化版 script.js - 用于排查产品不显示问题
+// 6ft 产品展示网站脚本
 
 const LanguageManager = {
     supportedLanguages: ['zh', 'en', 'ko'],
@@ -13,6 +13,32 @@ const LanguageManager = {
             localStorage.setItem('currentLanguage', 'zh');
         }
         document.documentElement.lang = this.currentLanguage;
+        this.bindLanguageButtons();
+    },
+    
+    bindLanguageButtons() {
+        const buttons = document.querySelectorAll('.language-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const lang = btn.dataset.lang;
+                this.switchLanguage(lang);
+                buttons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (typeof loadProducts === 'function') {
+                    loadProducts();
+                }
+                if (typeof updateFooterLanguage === 'function') {
+                    updateFooterLanguage();
+                }
+            });
+        });
+        
+        const activeLang = this.currentLanguage;
+        buttons.forEach(btn => {
+            if (btn.dataset.lang === activeLang) {
+                btn.classList.add('active');
+            }
+        });
     },
     
     switchLanguage(lang) {
@@ -25,10 +51,6 @@ const LanguageManager = {
     
     getCurrentLanguage() {
         return this.currentLanguage;
-    },
-    
-    translate(key, namespace = 'common') {
-        return key;
     }
 };
 
@@ -95,20 +117,17 @@ async function loadProductsData() {
     };
     
     try {
-        console.log('Fetching:', configUrl);
         const response = await fetch(configUrl);
-        console.log('Response:', response.status);
         
         if (response.ok) {
             const config = await response.json();
-            console.log('Config loaded, products:', config.products ? Object.keys(config.products) : 'none');
             
             if (config.products && Object.keys(config.products).length > 0) {
                 return processProductData(config);
             }
         }
     } catch (e) {
-        console.error('Load error:', e);
+        console.error('加载产品数据失败:', e);
     }
     
     return {};
@@ -121,7 +140,7 @@ function updateNavigation(products) {
         const navLinks = document.querySelector('.nav-links');
         if (!navLinks) return;
         
-        const currentLang = 'zh';
+        const currentLang = LanguageManager.getCurrentLanguage();
         
         const sortedSeries = Object.keys(products).map(key => ({
             id: key,
@@ -143,7 +162,7 @@ function updateNavigation(products) {
         
         navLinks.innerHTML = html;
     } catch (e) {
-        console.error('updateNavigation error:', e);
+        console.error('更新导航栏失败:', e);
     }
 }
 
@@ -151,28 +170,23 @@ function generateProductSections(products) {
     try {
         const container = document.getElementById('product-series-container');
         if (!container) {
-            console.error('Container not found!');
             return;
         }
         
         container.innerHTML = '';
         
-        const currentLang = 'zh';
+        const currentLang = LanguageManager.getCurrentLanguage();
         
         const sortedSeries = Object.keys(products).map(key => ({
             id: key,
             ...products[key]
         })).sort((a, b) => (a.order || 999) - (b.order || 999));
         
-        console.log('Generating sections for:', sortedSeries.length, 'series');
-        
         sortedSeries.forEach(series => {
             const key = series.id;
             const seriesName = series.nameTranslations && series.nameTranslations[currentLang] 
                 ? series.nameTranslations[currentLang] 
                 : series.name;
-            
-            console.log('Creating section:', key, seriesName);
             
             const section = document.createElement('section');
             section.className = 'product-series';
@@ -190,7 +204,7 @@ function generateProductSections(products) {
             container.appendChild(section);
         });
     } catch (e) {
-        console.error('generateProductSections error:', e);
+        console.error('生成产品系列失败:', e);
     }
 }
 
@@ -202,7 +216,7 @@ function scrollProducts(gridId, scrollAmount) {
 }
 
 function createProductCard(product, category) {
-    const currentLang = 'zh';
+    const currentLang = LanguageManager.getCurrentLanguage();
     const productName = product.nameTranslations && product.nameTranslations[currentLang] 
         ? product.nameTranslations[currentLang] 
         : product.name;
@@ -225,8 +239,6 @@ function createProductCard(product, category) {
 }
 
 function loadProducts() {
-    console.log('loadProducts called, productsData:', Object.keys(productsData).length);
-    
     if (!productsData || Object.keys(productsData).length === 0) {
         const container = document.getElementById('product-series-container');
         if (container) {
@@ -241,7 +253,6 @@ function loadProducts() {
     Object.keys(productsData).forEach(category => {
         const containerId = `${encodeURIComponent(category)}-products`;
         const container = document.getElementById(containerId);
-        console.log('Looking for container:', containerId, container ? 'found' : 'not found');
         
         if (container) {
             const series = productsData[category];
@@ -249,8 +260,6 @@ function loadProducts() {
                 const sortedProducts = [...series.products].sort((a, b) => {
                     return (a.order || 999) - (b.order || 999);
                 });
-                
-                console.log('Adding', sortedProducts.length, 'products to', category);
                 
                 const fragment = document.createDocumentFragment();
                 sortedProducts.forEach(product => {
@@ -300,20 +309,15 @@ function initSlider() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOMContentLoaded');
-    
     try {
         initSlider();
         
         productsData = await loadProductsData();
-        console.log('Products loaded:', Object.keys(productsData).length, 'categories');
         
         LanguageManager.init();
         
         const pathname = window.location.pathname;
         const isIndexPage = pathname.endsWith('index.html') || pathname === '/' || pathname === '' || pathname.endsWith('/');
-        
-        console.log('Is index page:', isIndexPage, pathname);
         
         if (isIndexPage) {
             loadProducts();
@@ -332,6 +336,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
     } catch (e) {
-        console.error('Init error:', e);
+        console.error('初始化失败:', e);
     }
 });

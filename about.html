@@ -172,29 +172,20 @@
 
     <script src="./js/script.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof applyTheme === 'function') {
-                applyTheme();
-            }
-            if (typeof updateNavigation === 'function') {
-                updateNavigation();
-            }
-            if (typeof loadQuickLinks === 'function') {
-                loadQuickLinks();
-            }
-            if (typeof loadFooterInfo === 'function') {
-                loadFooterInfo();
-            }
+        document.addEventListener('DOMContentLoaded', async () => {
             if (typeof LanguageManager !== 'undefined') {
                 LanguageManager.init();
-                // 绑定语言切换按钮事件
-                const languageButtons = document.querySelectorAll('.language-btn');
-                languageButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        LanguageManager.switchLanguage(button.dataset.lang);
-                    });
-                });
             }
+            
+            try {
+                productsData = await loadProductsData();
+                if (typeof updateNavigation === 'function') {
+                    updateNavigation(productsData);
+                }
+            } catch (e) {
+                console.error('加载数据失败:', e);
+            }
+            
             loadContactInfo();
         });
 
@@ -230,7 +221,6 @@
                             const addrEl = document.getElementById('contact-address');
                             if (addrEl) addrEl.textContent = contactInfo.address;
                         }
-                        // 加载品牌理念
                         if (contactInfo.brandValuesTitle) {
                             const brandValuesTitleEl = document.getElementById('brand-values-title');
                             if (brandValuesTitleEl) brandValuesTitleEl.textContent = contactInfo.brandValuesTitle;
