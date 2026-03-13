@@ -1223,8 +1223,9 @@
             currentConfig: null,
 
             // 初始化
-            init() {
-                this.loadConfig();
+            async init() {
+                await this.loadConfig();
+                this.updateStats();
                 return this;
             },
 
